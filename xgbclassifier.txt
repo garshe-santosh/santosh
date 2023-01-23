@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Nov 16 23:24:40 2022
+
+@author: hp
+"""
+import numpy as np
+import pandas as pd
+df = pd.read_csv(r'C:\Users\hp\Downloads\Churn_Modelling.csv')
+x = df.iloc[:,3:-1].values
+y = df.iloc[:,-1].values
+
+#as we see categorical data of gender need to be converted to
+# 0-1 which is label encoder 
+
+from sklearn.preprocessing import LabelEncoder
+LE = LabelEncoder()
+x[:,2] = LE.fit_transform(x[:,2])
+
+
+#hot encoding for geogrph column as its categorical need to be converted to 1-0
+#almost 3 columns
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+CT = ColumnTransformer(transformers=[('encoder',OneHotEncoder(),[1])],remainder = 'passthrough')
+x=np.array(CT.fit_transform(x))
+
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=0)
+
+from xgboost import XGBClassifier
+XG = XGBClassifier(base_score=0.5, booster='gbtree', colsample_bylevel=1,
+              colsample_bynode=1, colsample_bytree=1, gamma=0, gpu_id=-1,
+              importance_type='gain', interaction_constraints='',
+              learning_rate=0.00000001, max_delta_step=0, max_depth=10,
+              min_child_weight=1,monotone_constraints='()',
+              n_estimators=150, n_jobs=0, num_parallel_tree=1, random_state=0,
+              reg_alpha=0, reg_lambda=1, scale_pos_weight=1, subsample=1,
+              tree_method='exact', validate_parameters=1, verbosity=None)
+XG.fit(x_train,y_train)
+y_pred = XG.predict(x_test)
+
+from sklearn.metrics import confusion_matrix
+CM = confusion_matrix(y_test,y_pred)
+print(CM)
+
+from sklearn.metrics import accuracy_score
+AC = accuracy_score(y_test,y_pred)
+print(AC)
